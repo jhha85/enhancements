@@ -81,6 +81,7 @@ The Memory Manager is proposed for a solution deploying Pod and Containers with 
 
 - [Hardware topology awareness at node level (including NUMA)][numa-issue]
 - [Support Container Isolation of Hugepages][hugepage-issue]
+- [Support isolating memory to single NUMA node][memory-issue]
 
 ## Goals
 
@@ -260,3 +261,4 @@ This will be also followed by a Kubelet Flag for the Memory Manager Policy, whic
 [node-allocatable-feature]: https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/node-allocatable.md
 [numa-issue]: https://github.com/kubernetes/kubernetes/issues/49964
 [hugepage-issue]: https://github.com/kubernetes/kubernetes/issues/80716
+[memory-issue]: https://github.com/kubernetes/kubernetes/issues/81009
