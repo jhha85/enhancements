@@ -36,6 +36,7 @@ superseded-by:
     - [Node Specification](#node-specification)
     - [Pod Specification](#pod-specification)
     - [CRI Updates](#cri-updates)
+    - [Support container isolation of huge pages](#support-container-isolation-of-huge-pages)
     - [Cgroup Enforcement](#cgroup-enforcement)
     - [Limits and Quota](#limits-and-quota)
     - [Scheduler changes](#scheduler-changes)
@@ -388,11 +389,103 @@ spec:
 The `LinuxContainerResources` message should be extended to support specifying
 huge page limits per size.  The specification for huge pages should align with
 opencontainers/runtime-spec.
-
 see:
 https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md#huge-page-limits
 
-The CRI changes are required before promoting this feature to Beta.
+The runtime-spec provides the object `hugepageLimits` as an array of objects to
+represent `hugetlb` controller. `hugepageLimits` allows specifying `limit` per
+`pageSize`. The following is an example of the `hugepageLimits` object,
+which has limits per 2MB and 64KB page size:
+
+```
+    "hugepageLimits": [
+        {
+            "pageSize": "2MB",
+            "limit": 209715200
+        },
+        {
+            "pageSize": "64KB",
+            "limit": 1000000
+        }
+   ]
+```
+
+The `LinuxContainerResources` message can be extended to specify multiple sizes
+to align with the runtime-spec in this way:
+```
+message LinuxContainerResources {
+    ...
+    string cpuset_mems = 7;
+    // List of HugepageLimits to limit the HugeTLB usage of container per page size. Default: nil (not specified).
+    repeated HugepageLimit hugepage_limits = 8;
+}
+
+// HugepageLimit corresponds to the file`hugetlb.<hugepagesize>.limit_in_byte` in container level cgroup.
+// For example, `PageSize=1GB`, `Limit=1073741824` means setting `1073741824` bytes to hugetlb.1GB.limit_in_bytes.
+message HugepageLimit {
+    // The value of PageSize has the format <size><unit-prefix>B (2MB, 1GB),
+    // and must match the <hugepagesize> of the corresponding control file found in `hugetlb.<hugepagesize>.limit_in_bytes`.
+    // The values of <unit-prefix> are intended to be parsed using base 1024("1KB" = 1024, "1MB" = 1048576, etc).
+    string page_size = 1;
+    // limit in bytes of hugepagesize HugeTLB usage.
+    uint64 limit = 2;
+}
+```
+
+#### Support container isolation of huge pages
+
+Pod spec allows containers to request and consume huge pages as a container
+level resource. Multiple containers may consume multiple huge pages size
+in the same pod spec.
+
+Kubelet with pod isolation of huge pages set aggregated huge page limits
+on pod level cgroup; and each container level cgroup does not have its huge page
+limit per page size. So it is hard to guarantee containers to consume huge pages
+as they requested with pod isolation of huge pages.
+
+Therefore, it is required to support container isolation of huge pages to
+guarantee containers to consume huge pages as they requested.
+Kubelet with container isolation of huge pages will set huge page limits on
+both of pod and container level cgroup. Pod level cgroup will have aggregated
+huge pages limit from containers per page size. Container level cgroup will have
+a huge page limit per size as equal to containers requested in the pod spec.
+
+The following is an example of the pod that consumes 2Gi huge pages of 1Gi size
+and 2Gi huge pages of 2Mi size without emptyDir backing.  In this case, in the
+pod level group, `hugetlb.1GB.limit_in_byte` will have `2147483648` bytes and
+`hugetlb.2MB.limit_in_byte` will have `2147483648` bytes as aggregated limits of
+the pod. In each container level cgroup, `hugetlb.1GB.limit_in_byte` and
+`hugetlb.2MB.limit_in_byte` will have `1073741824` bytes as a limit:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example
+spec:
+  containers:
+  - name: container1
+...
+    resources:
+      requests:
+        hugepages-2Mi: 1Gi
+        hugepages-1Gi: 1Gi
+      limits:
+        hugepages-2Mi: 1Gi
+        hugepages-1Gi: 1Gi
+  - name: container2
+...
+    resources:
+      requests:
+        hugepages-2Mi: 1Gi
+        hugepages-1Gi: 1Gi
+      limits:
+        hugepages-2Mi: 1Gi
+        hugepages-1Gi: 1Gi
+```
+
+To support container isolation of huge pages, the `LinuxContainerResources`
+message of CRI should be extended to support specifying huge page limits per
+page size.
 
 #### Cgroup Enforcement
 
