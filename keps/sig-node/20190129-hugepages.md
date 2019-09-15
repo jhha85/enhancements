@@ -36,6 +36,7 @@ superseded-by:
     - [Node Specification](#node-specification)
     - [Pod Specification](#pod-specification)
     - [CRI Updates](#cri-updates)
+    - [Support container isolation of huge pages](#support-container-isolation-of-huge-pages)
     - [Cgroup Enforcement](#cgroup-enforcement)
     - [Limits and Quota](#limits-and-quota)
     - [Scheduler changes](#scheduler-changes)
@@ -290,6 +291,56 @@ see:
 https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md#huge-page-limits
 
 The CRI changes are required before promoting this feature to Beta.
+
+#### Support container isolation of huge pages
+
+Container isolation of hugepages should be supported to guarantee containers to
+consume huge pages as requested and to support NUMA in the future.  To support
+container isolation, the `LinuxContainerResources` message, which is used by the
+`UpdateContainerResources` RPC of CRI, should be extended to support huge pages.
+
+At this point(Kubernetes 1.16), Kubelet calculates the total requested amount of
+huge pages from the containers in the pod spec then sets the aggregated limits
+of huge pages on the pod level cgroup directly.
+
+The `Hugepage Manager` will be introduced to support container isolation of
+huge pages. `Hugepage Manager` is a small component in Kubelet responsible for
+setting the limits of huge pages on container level cgroup.
+The `Hugepage Manager` utilizes `UpdateContainerResources` RPC of CRI to set the
+limits. When the new container which requests huge pages is admitting,
+the function `AddContainer` of `Hugepage Manager` will be called by
+`PreStartContainer` of `internalContainerLifecycle` where the CPU Manager and
+the Topology Manager are called to handle `addContainer` and
+`removeContainer` events.
+
+Below `As Is`/`To Be` illustrates what changes will be made at the CRI level.
+It assumes that the container has huge pages and exclusive cpus as resources.
+
+`As Is`
+a) Create a pod sandbox
+   (the `RunPodSandbox` RPC is called)
+b) Set limits of huge pages on the pod level cgroup
+   (Kubelet sets limits directly)
+c) Create a container
+   (the `CreateContainer` RPC is called)
+d) Update container resources for exlusive cpu
+   (the `UpdateContainerResources` RPC is called)
+e) Start a container
+   (the `StartContainer` RPC is called)
+
+`To Be`
+a) Create a pod sandbox
+   (the `RunPodSandbox` RPC is called)
+b) Set limits of huge pages on the pod level cgroup
+   (Kubelet sets limits directly)
+c) Create a container
+   (the `CreateContainer` RPC is called)
+d) Update container resources for exlusive cpu
+   (the `UpdateContainerResources` RPC is called)
+e) Update container resources for huge pages
+   (the `UpdateContainerResources` RPC is called)
+f) Start a container
+   (the `StartContainer` RPC is called)
 
 #### Cgroup Enforcement
 
