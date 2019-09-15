@@ -88,6 +88,16 @@ usage of pre-allocated huge pages instead of THP.
 Managing memory is hard, and unfortunately, there is no one-size fits all
 solution for all applications.
 
+At this point, Kubernetes supports pre-allocated huge pages as a node resources.
+To consume huge pages in a container, a certain amount of huge pages should be
+specified under the `container spec` by using the field `hugepages-<size>`.
+In Kubelet, it supports pod isolation of huge pages so that Kubelet sets the
+total amount of requested huge pages as limits on the pod level cgroup.
+It may lead to the issue, which is the competition of containers in the same pod
+to consume huge pages, because there are no limits on container level cgroup
+so that it is not guaranteed a container to consume huge pages as requested.
+For this reason, it is required to support container isolation of huge pages.
+
 ### Goals
 
 This proposal only includes pre-allocated huge pages configured on the node by
