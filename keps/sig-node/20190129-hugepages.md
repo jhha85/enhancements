@@ -290,6 +290,50 @@ opencontainers/runtime-spec.
 see:
 https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md#huge-page-limits
 
+The runtime-spec says `hugepageLimits` as an array of objects, and each object
+allows specifying `limit` per `pageSize`.
+```
+    "hugepageLimits": [
+        {
+            "pageSize": "2MB",
+            "limit": 209715200
+        },
+        {
+            "pageSize": "64KB",
+            "limit": 1000000
+        }
+   ]
+```
+
+The `LinuxContainerResources` message can be extended to specify multiple size
+to align with the runtime-spec.
+```
+message LinuxContainerResources {
+    ...
+    string cpuset_cpus = 6;
+    // List of HugeTLB limit, the limit consists of pageSize and limit.
+    HugepageLimits hugetlb_limits = 8;
+}
+
+// List of limits for hugetlb subsystem
+message HugepageLimits
+{
+    // List of HugepageLimit
+    repeated HugepageLimit hugetlb_limit = 1;
+}
+
+// HugepageLimit contains pageSize and limit.
+// `pageSize=1GB`, `limit=1073741824` means setting `1073741824` bytes
+// on hugetlb.1GB.limit_in_bytes of container level cgroup.
+message HugepageLimit
+{
+    // hugepage size in the format <size><unit-prefix>B (2MB, 1GB)
+    string pageSize = 1;
+    // hugepages limit in bytes.
+    uint64 limit = 2;
+}
+```
+
 The CRI changes are required before promoting this feature to Beta.
 
 #### Support container isolation of huge pages
