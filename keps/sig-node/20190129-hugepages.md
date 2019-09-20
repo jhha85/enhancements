@@ -310,25 +310,17 @@ to align with the runtime-spec.
 ```
 message LinuxContainerResources {
     ...
-    string cpuset_cpus = 6;
-    // List of HugeTLB limit, the limit consists of pageSize and limit.
-    HugepageLimits hugetlb_limits = 8;
-}
-
-// List of limits for hugetlb subsystem
-message HugepageLimits
-{
-    // List of HugepageLimit
-    repeated HugepageLimit hugetlb_limit = 1;
+    string cpuset_mems = 7;
+    // List of Hugepage limit, the limit consists of pagesize and limit.
+    repeated HugepageLimit hugepage_limits = 8;
 }
 
 // HugepageLimit contains pageSize and limit.
-// `pageSize=1GB`, `limit=1073741824` means setting `1073741824` bytes
+// `page_size=1GB`, `limit=1073741824` means setting `1073741824` bytes
 // on hugetlb.1GB.limit_in_bytes of container level cgroup.
-message HugepageLimit
-{
+message HugepageLimit {
     // hugepage size in the format <size><unit-prefix>B (2MB, 1GB)
-    string pageSize = 1;
+    string page_size = 1;
     // hugepages limit in bytes.
     uint64 limit = 2;
 }
