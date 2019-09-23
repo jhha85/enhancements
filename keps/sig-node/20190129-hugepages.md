@@ -339,12 +339,12 @@ At this point(Kubernetes 1.16), Kubelet calculates the total requested amount of
 huge pages from the containers in the pod spec then sets the aggregated limits
 of huge pages on the pod level cgroup directly.
 
-The `Hugepage Manager` will be introduced to support container isolation of
-huge pages. `Hugepage Manager` is a small component in Kubelet responsible for
+The `Hugepage Handler` will be introduced to support container isolation of
+huge pages. `Hugepage Handler` is a small component in Kubelet responsible for
 setting the limits of huge pages on container level cgroup.
-The `Hugepage Manager` utilizes `UpdateContainerResources` RPC of CRI to set the
+The `Hugepage Handler` utilizes `UpdateContainerResources` RPC of CRI to set the
 limits. When the new container which requests huge pages is admitting,
-the function `AddContainer` of `Hugepage Manager` will be called by
+the function `AddContainer` of `Hugepage Handler` will be called by
 `PreStartContainer` of `internalContainerLifecycle` where the CPU Manager and
 the Topology Manager are called to handle `addContainer` and
 `removeContainer` events.
