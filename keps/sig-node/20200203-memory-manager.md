@@ -32,15 +32,16 @@ _Authors:_
 
 ## Table of Contents
 
+<!-- toc -->
 - [Overview](#overview)
 - [Motivation](#motivation)
-  - [Related Features](#Related-features)
-  - [Related issues](#Related-issues)
+  - [Related Features](#related-features)
+  - [Related issues](#related-issues)
   - [Goals](#goals)
   - [Non-Goals](#non-goals)
   - [User Stories](#user-stories)
-    - [Story 1](#story-1)
-    - [Story 2](#story-2)
+    - [Story 1 : Networking Acceleration using DPDK](#story-1--networking-acceleration-using-dpdk)
+    - [Story 2 : Database](#story-2--database)
 - [Proposal](#proposal)
   - [Proposed Changes](#proposed-changes)
     - [New Component: Memory Manager](#new-component-memory-manager)
@@ -56,14 +57,15 @@ _Authors:_
       - [Internal Container Lifecycle changes](#internal-container-lifecycle-changes)
     - [Feature Gate and Kubelet Flags](#feature-gate-and-kubelet-flags)
 - [Graduation Criteria](#graduation-criteria)
-  - [Phase 1: Alpha (target v1.1x)](#phase-1-Alpha-target-v11x)
-  - [Phase 2: Beta](#phase-1-Beta)
+  - [Phase 1: Alpha (target v1.19)](#phase-1-alpha-target-v119)
+  - [Phase 2: Beta](#phase-2-beta)
   - [GA (stable)](#ga-stable)
 - [Appendix](#appendix)
   - [How DPDK works](#how-dpdk-works)
   - [Requirements to guarantee performance of DPDK](#requirements-to-guarantee-performance-of-dpdk)
-  - [How Linux OOM system works](#how-oom-system-works)
+  - [How Linux OOM system works](#how-linux-oom-system-works)
   - [How Kubernetes utilizes Linux OOM system](#how-kubernetes-utilizes-linux-oom-system)
+<!-- /toc -->
 
 # Overview
 
@@ -318,7 +320,7 @@ TBD
 
 TBD
 
-## How OOM system works
+## How Linux OOM system works
 
 TBD
 
