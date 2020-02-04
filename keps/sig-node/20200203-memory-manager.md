@@ -147,26 +147,29 @@ The concept of safety zone is proposed to reserve certain amount of memory and h
 
 For example, if Node Allocatable feature reserved total 10Gbi memory on node which is two sockets server machine, safety zone memory cannot be greater than 5Gbi.
 
+```
                   +-----------------+-------------------------+
 NUMA node0(40Gi)  | Safety Zone(5Gi)|    Allocatable(35Gi)    |
                   +-----------------+-------------------------+
                   +-----------------+-------------------------+
 NUMA node1(40Gi)  | Safety Zone(5Gi)|    Allocatable(35Gi)    |
                   +-----------------+-------------------------+
-TBD: this text images will be replaced to real image.
+```
+_Figure: The example of safety zone._
 
 
 #### The Concept of Reserved Zone
 
 Memory Manager has the concept of reserved zone to calculate NUMA node affinity precisely. The reserved zone is literally reserved for the containers which has Guaranteed QoS. Container doesn't always consume memory as much as they requested. For example container may request 5Gbi memory, but it can consumes only 3Gbi at runtime. Memory Manager treats requested memory of Guaranteed QoS containers as reserved memory. Memory Manager guarantee Guaranteed QoS containers usage of memory and hugepages on single NUMA node as they requested by using [CPUSET enforcement](#cpuset-enforcement) and [OOM Score Enforcement](#oom-score-enforcement). 
-           
+
+```
            +---------------+------------+--------------+
            |               |       Allocatable         |
 NUMA node  +  Safety Zone  +------------+--------------+
            |               |  Reserved  |     free     |
            +---------------+------------+--------------+
-TBD: this text images will be replaced to real image.
-
+```
+_Figure: The memory map of NUMA node._
 
 NOTE:
 - Reserved zone cannot be greater than Allocatable zone.
