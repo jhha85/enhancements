@@ -125,22 +125,22 @@ The Memory Manager is proposed to provide a way to guarantee NUMA awareness for 
 
 ### New Component: Memory Manager
 
- Memory Manager is a new component of Kubelet, it guarantees NUMA aware memory usage for the Pod which has Guarantedd QoS, here memory includes hugepages.
+Memory Manager is a new component of Kubelet, it guarantees NUMA aware memory usage for the Pod which has Guarantedd QoS, here memory includes hugepages.
 
- To guarantee NUMA aware memory usage, when Guaranteed QoS Pod admission is requested, Memory Manager caculates NUMA node affinity to figure out appropriate NUMA node where enough memory and hugepages exist for containers in the Pod. Then, when Pod deployed, it enfoces containers in the Pod to consume memory and hugepages from designated NUMA node which Topology Manager selected.
+To guarantee NUMA aware memory usage, when Guaranteed QoS Pod admission is requested, Memory Manager caculates NUMA node affinity to figure out appropriate NUMA node where enough memory and hugepages exist for containers in the Pod. Then, when Pod deployed, it enfoces containers in the Pod to consume memory and hugepages from designated NUMA node which Topology Manager selected.
 
- NOTE:
- - Memory Manager isolates Memory and Hugepages to single NUMA node to prevent remote(Inter-NUMA) memory access. For this, Memory Manager enforce cgroups cpuset subsystem using CRI API. For more details, see [CPUSET Enforcement](#cpuset-enforcement).
+NOTE:
+- Memory Manager isolates Memory and Hugepages to single NUMA node to prevent remote(Inter-NUMA) memory access. For this, Memory Manager enforce cgroups cpuset subsystem using CRI API. For more details, see [CPUSET Enforcement](#cpuset-enforcement).
 
- - Memory Manager guarantees that the container(in Guanteed QoS Pod) consumes requested amount of memory(which is isolated to a NUMA node) through linux OOM system. For more details, see [OOM Score Enforcement](#oom-score-enforcement)
+- Memory Manager guarantees that the container(in Guanteed QoS Pod) consumes requested amount of memory(which is isolated to a NUMA node) through linux OOM system. For more details, see [OOM Score Enforcement](#oom-score-enforcement)
 
- More details of this component are listed below.
+More details of this component are listed below.
 
 #### The Concept of Safety Zone
 
- Memory Manager has the concept of safety zone to manage memory and hugepages at the NUMA node level. Basically, Kubernetes support reserving memory at the node level through Node Allocatable feature. It provides options such as `system-reserved` and `kube-reserved` to reserve CPUs, Memory, Storage for system services and kubernetes system components. Fortunately, it is possible to reserve CPUs with consideration of NUMA because CPUs are reserved using their logical core number. On the other hand, it is impossible to reserve memory with consideration of NUMA, the only thing we can do is reserving memory at the node level.
+Memory Manager has the concept of safety zone to manage memory and hugepages at the NUMA node level. Basically, Kubernetes support reserving memory at the node level through Node Allocatable feature. It provides options such as `system-reserved` and `kube-reserved` to reserve CPUs, Memory, Storage for system services and kubernetes system components. Fortunately, it is possible to reserve CPUs with consideration of NUMA because CPUs are reserved using their logical core number. On the other hand, it is impossible to reserve memory with consideration of NUMA, the only thing we can do is reserving memory at the node level.
 
- The concept of safety zone is proposed to reserve certain amount of memory and hugepages equally on each NUMA node. The value of safety zone can be confiugred by configuration parameter of Memory Manager. For more details see the [Feature Gate and Kubelet Flags](#feature-gate-and-kubelet-flags) section.
+The concept of safety zone is proposed to reserve certain amount of memory and hugepages equally on each NUMA node. The value of safety zone can be confiugred by configuration parameter of Memory Manager. For more details see the [Feature Gate and Kubelet Flags](#feature-gate-and-kubelet-flags) section.
 - For memory, total amount of sefety zone memory(value of safety zone memory * number of NUMA nodes) cannot be greater than total amount of reserved memory(kube-reserved, system-reserved and eviction-threshold) by Node Allocatable feature.
 
 - For hugepages, at the moment(v1.17), Node Allocateble features does not support reserving hugepages, so that Memory Manager will not have safety zone for hugepages. Once Node Allocatable feature will support hugepages reservation([#83541](https://github.com/kubernetes/kubernetes/pull/83541)), safety zone for hugapages will works in the same manner of memory.
@@ -158,8 +158,7 @@ TBD: this text images will be replaced to real image.
 
 #### The Concept of Reserved Zone
 
- Memory Manager has the concept of reserved zone to calculate NUMA node affinity precisely.
-The Reserved zone is literally reserved for the containers which has Guaranteed QoS. Container doesn't always consume memory as much as they requested. For example container may request 5Gbi memory, but it can consumes only 3Gbi at runtime. Memory Manager treats requested memory of Guaranteed QoS containers as reserved memory. Memory Manager guarantee Guaranteed QoS containers usage of memory and hugepages on single NUMA node as they requested by using [CPUSET enforcement](#cpuset-enforcement) and [OOM Score Enforcement](#oom-score-enforcement). 
+Memory Manager has the concept of reserved zone to calculate NUMA node affinity precisely. The reserved zone is literally reserved for the containers which has Guaranteed QoS. Container doesn't always consume memory as much as they requested. For example container may request 5Gbi memory, but it can consumes only 3Gbi at runtime. Memory Manager treats requested memory of Guaranteed QoS containers as reserved memory. Memory Manager guarantee Guaranteed QoS containers usage of memory and hugepages on single NUMA node as they requested by using [CPUSET enforcement](#cpuset-enforcement) and [OOM Score Enforcement](#oom-score-enforcement). 
            
            +---------------+------------+--------------+
            |               |       Allocatable         |
@@ -175,8 +174,8 @@ NOTE:
 
 #### NUMA node affinity for memory and hugepages
 
- Memory Manager calculates NUMA node affinity that represents which NUMA node has enough capacity of memory and/or hugepages for containers in Guaranteed QoS Pod. To calculate affinity, Memory Manager takes capacity of memory and pre-allocated hugepages per NUMA node on its intialize sequence then calculate `Allocatable Memory of NUMA node` for every NUMA nodes.  Then when pod admission is requested, Memory Manager checks the pod has Guaranteed QoS or not, if the pod has Guaranteed QoS, Memory Manager calculates NUMA node affinity by the following way: it checks resources availability of each NUMA nodes based on `Allocatable Memory of NUMA node` and total amount of `reserved` memory and hugepages of NUMA node.
- 
+Memory Manager calculates NUMA node affinity that represents which NUMA node has enough capacity of memory and/or hugepages for containers in Guaranteed QoS Pod. To calculate affinity, Memory Manager takes capacity of memory and pre-allocated hugepages per NUMA node on its intialize sequence then calculate `Allocatable Memory of NUMA node` for every NUMA nodes.  Then when pod admission is requested, Memory Manager checks the pod has Guaranteed QoS or not, if the pod has Guaranteed QoS, Memory Manager calculates NUMA node affinity by the following way: it checks resources availability of each NUMA nodes based on `Allocatable Memory of NUMA node` and total amount of `reserved` memory and hugepages of NUMA node.
+
 Here are formulas that shows how to calculate NUMA node affinity for memory and hugepages.
 - NUMA Node affinity of memory can be calcuated by below formulas.
    - Allocatable Memory of NUMA node = Total Memory of NUMA node - pre-allocated hugepages on the NUMA node - safety zone memory of NUMA node.
@@ -191,7 +190,7 @@ Here are formulas that shows how to calculate NUMA node affinity for memory and 
 Topology Manager defines HintProvider interface to take node affinity of resources from resource managers(CPU, Device Manager). Memory Manager implements the interface to provide topology hint to Topology Manager.
 
 #### OOM Score Enforcement
- TBD, this section will explain how Memory Manager guarantee a certain amount of memory on specific NUMA node to container, spoiler is low OOM score(low score has high priority) enforcement which kubelet already doing.
+TBD, this section will explain how Memory Manager guarantee a certain amount of memory on specific NUMA node to container, spoiler is low OOM score(low score has high priority) enforcement which kubelet already doing.
 
 #### CPUSET Enforcement
 Memory Manager restricts memory access of container(which has Guaranteed QoS) to a specific NUMA node by using cgroup cpuset subsystem. The subsystem provides the mechanism(`cpuset.cpus`, `cpuset.mems`) for assigning a set of cpus and memory nodes(it equals to NUMA nodes) to a set of linux process.  In kubelet, CPU Manager already uses `cpuset.cpus` to allocate exclusive logical cpu core to a container. Similar to CPU Manager, Memory Manager uses `cpuset.mems` to restrict containers memory access to specific memory node. 
@@ -333,7 +332,7 @@ TBD
 
 TBD, spoiler: each QoS type has different OOM score.
 
-[node-topology-manager]: https://github.com/kubernetes/enhancements/blob/dcc8c7241513373b606198ab0405634af643c500/keps/sig-node/0035-20190130-topology-manager.md
+[topology-manager]: https://github.com/kubernetes/enhancements/blob/dcc8c7241513373b606198ab0405634af643c500/keps/sig-node/0035-20190130-topology-manager.md
 [cpu-manager]: https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/cpu-manager.md
 [device-manager]: https://github.com/kubernetes/community/blob/master/contributors/design-proposals/resource-management/device-plugin.md
 [hugepages]: https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/20190129-hugepages.md
