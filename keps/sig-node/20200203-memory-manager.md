@@ -15,7 +15,7 @@ approvers:
   - TBD
 editor: TBD
 creation-date: 2020-02-03
-last-updated: -
+last-updated: TBD
 status: draft
 see-also:
 replaces:
@@ -27,8 +27,8 @@ superseded-by:
 _Authors:_
 
 - @bg-chun - Byonggon Chun &lt;bg.chun@samsung.com&gt;
-- TBD&gt;
-- TBD &gt;
+- TBD
+- TBD
 
 ## Table of Contents
 
